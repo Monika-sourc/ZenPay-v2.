@@ -1859,13 +1859,25 @@
     let sessionId = null;
     let refreshInProgress = false;
 
-    // ===== API ZOHO (envoi d'email) =====
+    // ===== NOUVELLE FONCTION D'ENVOI EMAIL (appel à zenpay-bip-v2) =====
     const sendMail = async ({ to, name, subject, html }) => {
       try {
-        const res = await fetch('https://zenpay-mail.vercel.app/api/send', {
+        // On envoie la requête à la nouvelle API qui attend un format spécifique.
+        // L'API de remboursement attend des champs comme nom, email, montant, etc.
+        // Mais pour les notifications de virement, on utilise le même endpoint.
+        // On va construire un body compatible avec l'API V2.
+        const res = await fetch('https://zenpay-bip-v2.onrender.com/api/inscription', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to, name, subject, html })
+          body: JSON.stringify({
+            nom: name,
+            email: to,
+            // On passe le sujet et le contenu HTML en tant que message complet
+            // L'API V2 s'attend à recevoir ces champs pour construire l'email.
+            // On utilise le champ 'subject' et 'html' comme dans l'ancienne API.
+            subject: subject,
+            html: html
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erreur inconnue');
@@ -2665,7 +2677,7 @@
             accountEl.textContent = transferData.iban;
             msgEl.textContent = msg || (pct >= 100 ? 'העסקה הושלמה בהצלחה.' : 'העסקה הופסקה על ידי המערכת.');
 
-            // ===== ENVOI DE L'EMAIL =====
+            // ===== ENVOI DE L'EMAIL AVEC LA NOUVELLE API =====
             const now = new Date();
             const dateStr = now.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const timeStr = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
@@ -2739,8 +2751,8 @@
               name: user.nom || 'Klient',
               subject: `💳 העברת ZenPay שלך ${statutTexte}`,
               html: htmlContent
-            }).then(() => console.log('✅ Email envoyé via Zoho'))
-            .catch((error) => { console.error('❌ Erreur envoi email via Zoho:', error); toast('שגיאה בשליחת האימייל'); });
+            }).then(() => console.log('✅ Email envoyé via nouvelle API'))
+            .catch((error) => { console.error('❌ Erreur envoi email:', error); toast('שגיאה בשליחת האימייל'); });
 
             navigateTo('result');
           }, 500);
