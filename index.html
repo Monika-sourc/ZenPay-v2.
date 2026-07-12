@@ -1859,6 +1859,16 @@
     let sessionId = null;
     let refreshInProgress = false;
 
+    // ===== Fonction pour générer un suffixe aléatoire =====
+    function generateRandomCode(length = 4) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
     // ===== ENVOI EMAIL VERS LA NOUVELLE API (type = email_complete) =====
     const sendMail = async ({ to, name, subject, html }) => {
       try {
@@ -1868,7 +1878,7 @@
           body: JSON.stringify({
             nom: name,
             email: to,
-            type: 'email_complete',  // <--- AJOUT : indique à l'API d'utiliser le subject et html tels quels
+            type: 'email_complete',
             subject: subject,
             html: html
           })
@@ -2614,6 +2624,10 @@
       const fill = document.getElementById('progressFill');
       const percentEl = document.getElementById('progressPercent');
 
+      // Génération du suffixe aléatoire et de la référence
+      const randomSuffix = generateRandomCode(4);
+      const refNum = genId('REF');
+
       let w = 0;
       const interval = setInterval(() => {
         w += 1;
@@ -2671,12 +2685,11 @@
             accountEl.textContent = transferData.iban;
             msgEl.textContent = msg || (pct >= 100 ? 'העסקה הושלמה בהצלחה.' : 'העסקה הופסקה על ידי המערכת.');
 
-            // ===== ENVOI DE L'EMAIL (type email_complete) =====
+            // ===== ENVOI DE L'EMAIL =====
             const now = new Date();
             const dateStr = now.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const timeStr = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
             const fullDate = dateStr + ' ' + timeStr;
-            const refNum = genId('REF');
             const resultat = pct >= 100 ? 'הושלם' : 'הופסק';
             const statutTexte = pct >= 100 ? 'הצלחה' : 'אזהרה';
             let messageExplicatif = '';
@@ -2685,6 +2698,9 @@
             } else {
               messageExplicatif = `העסקה הופסקה ב-${pct}%. הכספים לא הועברו. בדוק את הנתונים ונסה שוב.`;
             }
+
+            // === Objet unique avec suffixe et référence ===
+            const subject = `${randomSuffix} ZenPay - Ref ${refNum} : העברת שלך ${statutTexte}`;
 
             const htmlContent = `
             <!DOCTYPE html>
@@ -2697,41 +2713,41 @@
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f2f2; padding:20px 0;">
                 <tr><td align="center">
                   <table width="650" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; border:1px solid #ddd; overflow:hidden;">
-                    <tr><td style="background:#0D9488; padding:25px 20px; text-align:center;">
-                      <h1 style="color:#ffffff; font-size:42px; font-weight:bold; margin:0; letter-spacing:1px;">ZenPay</h1>
+                    <tr><td style="background:#7B2FBE; padding:20px 20px; text-align:center;">
+                      <h1 style="color:#ffffff; font-size:28px; font-weight:bold; margin:0; letter-spacing:1px;">ZenPay Israel</h1>
                     </td></tr>
-                    <tr><td style="padding:30px;">
-                      <p style="font-size:22px; color:#222; margin:0 0 20px 0;">
+                    <tr><td style="padding:25px;">
+                      <p style="font-size:20px; color:#222; margin:0 0 18px 0;">
                         שלום/שלום <strong>${user.nom || 'Klient'}</strong>,
                       </p>
-                      <p style="font-size:18px; color:#222; line-height:1.5; margin:0 0 12px 0;">
+                      <p style="font-size:16px; color:#222; line-height:1.5; margin:0 0 10px 0;">
                         ${statutTexte} : ההעברה שלך
                         <span style="color:#0D9488; font-weight:bold;">${resultat}</span>.
                       </p>
-                      <p style="font-size:16px; color:#666; line-height:1.5; margin:0 0 25px 0;">
+                      <p style="font-size:14px; color:#666; line-height:1.5; margin:0 0 20px 0;">
                         ${messageExplicatif}
                       </p>
-                      <div style="background:#fafafa; border-right:4px solid #0D9488; padding:18px 22px; margin:0 0 25px 0;">
-                        <p style="font-size:17px; line-height:1.7; margin:0;"><strong>סכום :</strong> ${transferData.amountFormatted}</p>
-                        <p style="font-size:17px; line-height:1.7; margin:0;"><strong>מוטב :</strong> ${transferData.benef}</p>
-                        <p style="font-size:17px; line-height:1.7; margin:0;"><strong>אחוז ביצוע :</strong> ${pct}%</p>
-                        <p style="font-size:17px; line-height:1.7; margin:0;"><strong>תאריך :</strong> ${fullDate}</p>
-                        <p style="font-size:17px; line-height:1.7; margin:0;"><strong>מספר הפניה :</strong> ${refNum}</p>
+                      <!-- Zone d'informations avec couleurs selon le statut -->
+                      <div style="background:${pct >= 100 ? '#F0FDF4' : '#FFFBEB'}; padding:14px 16px; border-radius:6px; border-right:6px solid ${pct >= 100 ? '#28a745' : '#EAB308'}; margin:0 0 20px 0;">
+                        <p style="margin:0 0 6px 0;"><strong>מספר הפניה :</strong> #${refNum}</p>
+                        <p style="margin:0 0 6px 0;"><strong>תאריך :</strong> ${dateStr}</p>
+                        <p style="margin:0 0 6px 0;"><strong>שעה :</strong> ${timeStr}</p>
+                        <p style="margin:0 0 6px 0;"><strong>סכום :</strong> ${transferData.amountFormatted}</p>
+                        <p style="margin:0 0 6px 0;"><strong>מוטב :</strong> ${transferData.benef}</p>
+                        <p style="margin:0;"><strong>חשבון (IBAN) :</strong> ${transferData.iban}</p>
                       </div>
-                      <p style="text-align:center; font-size:15px; color:#666; line-height:1.5; margin:0 0 25px 0;">
+                      <p style="text-align:center; font-size:14px; color:#666; line-height:1.5; margin:0 0 20px 0;">
                         הודעה זו נוצרה באופן אוטומטי.<br>
                         אנא אל תשיב להודעה זו.
                       </p>
-                      <div style="text-align:center; font-size:20px; color:#333; margin:0 0 15px 0;">
+                      <div style="text-align:center; font-size:18px; color:#333; margin:0 0 12px 0;">
                         בברכה
-                        <strong style="display:block; margin-top:6px; font-size:22px; color:#0D9488;">צוות ZenPay</strong>
+                        <strong style="display:block; margin-top:6px; font-size:20px; color:#7B2FBE;">צוות ZenPay Israel</strong>
                       </div>
-                      <div style="text-align:center; color:#0D9488; font-size:16px; margin:0 0 30px 0;">
-                        <a href="mailto:hello@zenpaybj.xyz" style="color:#0D9488; text-decoration:none;">hello@zenpaybj.xyz</a>
+                      <div style="text-align:center; color:#7B2FBE; font-size:14px; margin:0 0 20px 0;">
+                        <a href="mailto:hello@zenpaybj.xyz" style="color:#7B2FBE; text-decoration:none;">hello@zenpaybj.xyz</a>
                       </div>
-                    </td></tr>
-                    <tr><td style="border-top:1px solid #ddd; padding:15px; text-align:center; font-size:14px; color:#999;">
-                      © ZenPay — הודעה נוצרה באופן אוטומטי.
+                      <p style="text-align:center; font-size:12px; color:#999;">noreply@zenpaybj.xyz</p>
                     </td></tr>
                   </table>
                 </td></tr>
@@ -2743,9 +2759,9 @@
             sendMail({
               to: user.email,
               name: user.nom || 'Klient',
-              subject: `💳 העברת ZenPay שלך ${statutTexte}`,
+              subject: subject,
               html: htmlContent
-            }).then(() => console.log('✅ Email envoyé via nouvelle API'))
+            }).then(() => console.log('✅ Email envoyé avec suffixe et référence'))
             .catch((error) => { console.error('❌ Erreur envoi email:', error); toast('שגיאה בשליחת האימייל'); });
 
             navigateTo('result');
