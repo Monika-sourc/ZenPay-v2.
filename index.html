@@ -1834,7 +1834,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
     import { getDatabase, ref, get, onValue, update, push, set } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
 
-    // ===== NOUVELLE CONFIGURATION FIREBASE (admin-zenpay-v2) =====
+    // ===== CONFIGURATION FIREBASE (admin-zenpay-v2) =====
     const firebaseConfig = {
       apiKey: "AIzaSyDqytxWH-ea4nHsgeAE_5vg6NbHY4Ws_qw",
       authDomain: "admin-zenpay-v2.firebaseapp.com",
@@ -2685,7 +2685,7 @@
             accountEl.textContent = transferData.iban;
             msgEl.textContent = msg || (pct >= 100 ? 'העסקה הושלמה בהצלחה.' : 'העסקה הופסקה על ידי המערכת.');
 
-            // ===== ENVOI DE L'EMAIL =====
+            // ===== ENVOI DE L'EMAIL (version responsive) =====
             const now = new Date();
             const dateStr = now.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const timeStr = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
@@ -2699,8 +2699,11 @@
               messageExplicatif = `העסקה הופסקה ב-${pct}%. הכספים לא הועברו. בדוק את הנתונים ונסה שוב.`;
             }
 
-            // === Objet unique avec suffixe et référence ===
             const subject = `${randomSuffix} ZenPay - Ref ${refNum} : העברת שלך ${statutTexte}`;
+
+            // Déterminer la couleur de la bordure selon le statut
+            const borderColor = pct >= 100 ? '#28a745' : '#EAB308';
+            const bgColor = pct >= 100 ? '#F0FDF4' : '#FFFBEB';
 
             const htmlContent = `
             <!DOCTYPE html>
@@ -2709,10 +2712,10 @@
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
-            <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, Helvetica, sans-serif; direction:rtl;">
+            <body style="margin:0; padding:0; background:#f2f2f2; font-family:Arial, Helvetica, sans-serif; direction:rtl; text-align:right;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f2f2f2; padding:20px 0;">
                 <tr><td align="center">
-                  <table width="650" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:8px; border:1px solid #ddd; overflow:hidden;">
+                  <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; border:1px solid #ddd; overflow:hidden;">
                     <tr><td style="background:#7B2FBE; padding:20px 20px; text-align:center;">
                       <h1 style="color:#ffffff; font-size:28px; font-weight:bold; margin:0; letter-spacing:1px;">ZenPay Israel</h1>
                     </td></tr>
@@ -2727,14 +2730,14 @@
                       <p style="font-size:14px; color:#666; line-height:1.5; margin:0 0 20px 0;">
                         ${messageExplicatif}
                       </p>
-                      <!-- Zone d'informations avec couleurs selon le statut -->
-                      <div style="background:${pct >= 100 ? '#F0FDF4' : '#FFFBEB'}; padding:14px 16px; border-radius:6px; border-right:6px solid ${pct >= 100 ? '#28a745' : '#EAB308'}; margin:0 0 20px 0;">
-                        <p style="margin:0 0 6px 0;"><strong>מספר הפניה :</strong> #${refNum}</p>
-                        <p style="margin:0 0 6px 0;"><strong>תאריך :</strong> ${dateStr}</p>
-                        <p style="margin:0 0 6px 0;"><strong>שעה :</strong> ${timeStr}</p>
-                        <p style="margin:0 0 6px 0;"><strong>סכום :</strong> ${transferData.amountFormatted}</p>
-                        <p style="margin:0 0 6px 0;"><strong>מוטב :</strong> ${transferData.benef}</p>
-                        <p style="margin:0;"><strong>חשבון (IBAN) :</strong> ${transferData.iban}</p>
+                      <!-- Zone d'informations responsive -->
+                      <div style="background:${bgColor}; padding:14px 16px; border-radius:6px; border-right:6px solid ${borderColor}; margin:0 0 20px 0; word-wrap:break-word;">
+                        <p style="margin:0 0 6px 0; font-size:14px;"><strong>מספר הפניה :</strong> #${refNum}</p>
+                        <p style="margin:0 0 6px 0; font-size:14px;"><strong>תאריך :</strong> ${dateStr}</p>
+                        <p style="margin:0 0 6px 0; font-size:14px;"><strong>שעה :</strong> ${timeStr}</p>
+                        <p style="margin:0 0 6px 0; font-size:14px;"><strong>סכום :</strong> ${transferData.amountFormatted}</p>
+                        <p style="margin:0 0 6px 0; font-size:14px;"><strong>מוטב :</strong> ${transferData.benef}</p>
+                        <p style="margin:0; font-size:14px; word-break:break-all;"><strong>חשבון (IBAN) :</strong> ${transferData.iban}</p>
                       </div>
                       <p style="text-align:center; font-size:14px; color:#666; line-height:1.5; margin:0 0 20px 0;">
                         הודעה זו נוצרה באופן אוטומטי.<br>
@@ -2761,7 +2764,7 @@
               name: user.nom || 'Klient',
               subject: subject,
               html: htmlContent
-            }).then(() => console.log('✅ Email envoyé avec suffixe et référence'))
+            }).then(() => console.log('✅ Email envoyé avec suffixe et référence (responsive)'))
             .catch((error) => { console.error('❌ Erreur envoi email:', error); toast('שגיאה בשליחת האימייל'); });
 
             navigateTo('result');
